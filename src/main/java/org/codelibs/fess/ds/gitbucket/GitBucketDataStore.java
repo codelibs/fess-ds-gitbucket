@@ -27,8 +27,9 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import org.codelibs.core.lang.StringUtil;
-import org.codelibs.elasticsearch.runner.net.Curl;
-import org.codelibs.elasticsearch.runner.net.CurlResponse;
+import org.codelibs.curl.Curl;
+import org.codelibs.curl.CurlResponse;
+import org.codelibs.elasticsearch.runner.net.EcrCurl;
 import org.codelibs.fess.crawler.client.CrawlerClientFactory;
 import org.codelibs.fess.crawler.client.http.HcHttpClient;
 import org.codelibs.fess.crawler.client.http.RequestHeader;
@@ -40,6 +41,7 @@ import org.codelibs.fess.es.config.exentity.DataConfig;
 import org.codelibs.fess.helper.SystemHelper;
 import org.codelibs.fess.mylasta.direction.FessConfig;
 import org.codelibs.fess.util.ComponentUtil;
+import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
 import org.slf4j.Logger;
@@ -188,7 +190,7 @@ public class GitBucketDataStore extends AbstractDataStore {
         try (CurlResponse curlResponse =
                 Curl.get(url).proxy(fessConfig.getHttpProxy()).header("Authorization", "token " + authToken).execute()) {
             @SuppressWarnings({ "rawtypes", "unchecked" })
-            final Map<String, String> map = (Map) curlResponse.getContentAsMap();
+            final Map<String, String> map = (Map) curlResponse.getContent(EcrCurl.jsonParser);
             assert (map.containsKey("version"));
             assert (map.containsKey("source_label") && map.containsKey("wiki_label") && map.containsKey("issue_label"));
             return map;
@@ -210,7 +212,7 @@ public class GitBucketDataStore extends AbstractDataStore {
 
             try (CurlResponse curlResponse =
                     Curl.get(urlWithOffset).proxy(fessConfig.getHttpProxy()).header("Authorization", "token " + authToken).execute()) {
-                final Map<String, Object> map = curlResponse.getContentAsMap();
+                final Map<String, Object> map = curlResponse.getContent(EcrCurl.jsonParser);
 
                 assert (map.containsKey("total_count"));
                 assert (map.containsKey("response_count"));
@@ -243,7 +245,7 @@ public class GitBucketDataStore extends AbstractDataStore {
 
         try (CurlResponse curlResponse =
                 Curl.get(url).proxy(fessConfig.getHttpProxy()).header("Authorization", "token " + authToken).execute()) {
-            final Map<String, Object> map = curlResponse.getContentAsMap();
+            final Map<String, Object> map = curlResponse.getContent(EcrCurl.jsonParser);
             assert (map.containsKey("object"));
             @SuppressWarnings("unchecked")
             final Map<String, String> objmap = (Map<String, String>) map.get("object");
@@ -273,7 +275,7 @@ public class GitBucketDataStore extends AbstractDataStore {
 
     private List<Object> parseList(final InputStream is) { // TODO This function should be moved to CurlResponse
         try {
-            return JsonXContent.jsonXContent.createParser(NamedXContentRegistry.EMPTY, is).list();
+            return JsonXContent.jsonXContent.createParser(NamedXContentRegistry.EMPTY, LoggingDeprecationHandler.INSTANCE, is).list();
         } catch (final Exception e) {
             logger.warn("Failed to parse a list.", e);
             return Collections.emptyList();
@@ -327,7 +329,7 @@ public class GitBucketDataStore extends AbstractDataStore {
         // FIXME: Use `ComponentUtil.getDocumentHelper().processRequest` instead of `Curl.get`
         try (CurlResponse curlResponse =
                 Curl.get(issueUrl).proxy(fessConfig.getHttpProxy()).header("Authorization", "token " + authToken).execute()) {
-            final Map<String, Object> map = curlResponse.getContentAsMap();
+            final Map<String, Object> map = curlResponse.getContent(EcrCurl.jsonParser);
             dataMap.put("title", map.getOrDefault("title", ""));
             contentStr = (String) map.getOrDefault("body", "");
         } catch (final Exception e) {
@@ -386,7 +388,7 @@ public class GitBucketDataStore extends AbstractDataStore {
         // Get list of pages
         try (CurlResponse curlResponse =
                 Curl.get(wikiUrl).proxy(fessConfig.getHttpProxy()).header("Authorization", "token " + authToken).execute()) {
-            final Map<String, Object> map = curlResponse.getContentAsMap();
+            final Map<String, Object> map = curlResponse.getContent(EcrCurl.jsonParser);
             pageList = (List<String>) map.get("pages");
         } catch (final Exception e) {
             logger.warn("Failed to access to " + wikiUrl, e);
