@@ -43,6 +43,7 @@ import org.codelibs.fess.mylasta.direction.FessConfig;
 import org.codelibs.fess.util.ComponentUtil;
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
+import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -274,8 +275,8 @@ public class GitBucketDataStore extends AbstractDataStore {
     }
 
     private List<Object> parseList(final InputStream is) { // TODO This function should be moved to CurlResponse
-        try {
-            return JsonXContent.jsonXContent.createParser(NamedXContentRegistry.EMPTY, LoggingDeprecationHandler.INSTANCE, is).list();
+        try (final XContentParser parser =  JsonXContent.jsonXContent.createParser(NamedXContentRegistry.EMPTY, LoggingDeprecationHandler.INSTANCE, is)) {
+           return parser.list();
         } catch (final Exception e) {
             logger.warn("Failed to parse a list.", e);
             return Collections.emptyList();
