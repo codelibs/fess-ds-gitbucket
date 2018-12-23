@@ -64,7 +64,7 @@ public class GitBucketDataStore extends AbstractDataStore {
     protected static final String COLLABORATORS_PARAM = "collaborators";
 
     protected String getName() {
-        return "GitBucketDataStore";
+        return "GitBucket";
     }
 
     @Override
