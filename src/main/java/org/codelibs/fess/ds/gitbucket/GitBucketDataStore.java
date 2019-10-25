@@ -417,7 +417,7 @@ public class GitBucketDataStore extends AbstractDataStore {
 
             callback.store(paramMap, dataMap);
             if (logger.isDebugEnabled()) {
-                logger.debug("Stored " + pageUrl);
+                logger.debug("Stored {}", pageUrl);
             }
 
             if (readInterval > 0) {
