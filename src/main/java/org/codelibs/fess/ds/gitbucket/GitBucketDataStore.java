@@ -24,12 +24,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.codelibs.core.lang.StringUtil;
 import org.codelibs.curl.Curl;
 import org.codelibs.curl.CurlResponse;
 import org.codelibs.elasticsearch.runner.net.EcrCurl;
+import org.codelibs.fess.crawler.client.CrawlerClient;
 import org.codelibs.fess.crawler.client.CrawlerClientFactory;
 import org.codelibs.fess.crawler.client.http.HcHttpClient;
 import org.codelibs.fess.crawler.client.http.RequestHeader;
@@ -97,8 +100,10 @@ public class GitBucketDataStore extends AbstractDataStore {
 
         final CrawlingConfig crawlingConfig = new CrawlingConfigWrapper(dataConfig) {
             @Override
-            public Map<String, Object> initializeClientFactory(final CrawlerClientFactory crawlerClientFactory) {
-                final Map<String, Object> paramMap = super.initializeClientFactory(crawlerClientFactory);
+            public CrawlerClientFactory initializeClientFactory(final Supplier<CrawlerClientFactory> creator) {
+                final CrawlerClientFactoryWrapper clientFactory = new CrawlerClientFactoryWrapper(creator.get());
+                super.initializeClientFactory(() -> clientFactory);
+                final Map<String, Object> paramMap = null;
                 final List<RequestHeader> headerList = new ArrayList<>();
                 final RequestHeader[] headers = (RequestHeader[]) paramMap.get(HcHttpClient.REQUERT_HEADERS_PROPERTY);
                 if (headers != null) {
@@ -109,7 +114,9 @@ public class GitBucketDataStore extends AbstractDataStore {
                 headerList.add(new RequestHeader("Authorization", "token " + authToken));
                 headerList.add(new RequestHeader("Accept", "application/vnd.github.v3.raw"));
                 paramMap.put(HcHttpClient.REQUERT_HEADERS_PROPERTY, headerList.toArray(new RequestHeader[headerList.size()]));
-                return paramMap;
+                clientFactory.setInitParameterMap(paramMap);
+                clientFactory.initParameterMap();
+                return clientFactory;
             }
         };
 
@@ -475,6 +482,60 @@ public class GitBucketDataStore extends AbstractDataStore {
                 return rootURL + path;
             }
             return rootURL + path + "?" + query;
+        }
+    }
+
+    // workaround
+    static class CrawlerClientFactoryWrapper extends CrawlerClientFactory {
+        private CrawlerClientFactory parent;
+        private Map<String, Object> params = new HashMap<>();
+
+        CrawlerClientFactoryWrapper(CrawlerClientFactory parent) {
+            this.parent = parent;
+        }
+
+        public void init() {
+            parent.init();
+        }
+
+        public void addClient(String regex, CrawlerClient client) {
+            parent.addClient(regex, client);
+        }
+
+        public void addClient(String regex, CrawlerClient client, int pos) {
+            parent.addClient(regex, client, pos);
+        }
+
+        public int hashCode() {
+            return parent.hashCode();
+        }
+
+        public void addClient(List<String> regexList, CrawlerClient client) {
+            parent.addClient(regexList, client);
+        }
+
+        public CrawlerClient getClient(String url) {
+            return parent.getClient(url);
+        }
+
+        public void setInitParameterMap(Map<String, Object> params) {
+            this.params.putAll(params);
+        }
+
+        public void initParameterMap() {
+            parent.setInitParameterMap(params);
+        }
+
+        public void setClientMap(Map<Pattern, CrawlerClient> clientMap) {
+            parent.setClientMap(clientMap);
+        }
+
+        public boolean equals(Object obj) {
+            return parent.equals(obj);
+        }
+
+        public String toString() {
+            return parent.toString();
         }
     }
 }
