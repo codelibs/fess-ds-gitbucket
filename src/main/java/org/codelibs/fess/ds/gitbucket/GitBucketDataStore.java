@@ -103,14 +103,8 @@ public class GitBucketDataStore extends AbstractDataStore {
             public CrawlerClientFactory initializeClientFactory(final Supplier<CrawlerClientFactory> creator) {
                 final CrawlerClientFactoryWrapper clientFactory = new CrawlerClientFactoryWrapper(creator.get());
                 super.initializeClientFactory(() -> clientFactory);
-                final Map<String, Object> paramMap = null;
+                final Map<String, Object> paramMap = new HashMap<>();
                 final List<RequestHeader> headerList = new ArrayList<>();
-                final RequestHeader[] headers = (RequestHeader[]) paramMap.get(HcHttpClient.REQUERT_HEADERS_PROPERTY);
-                if (headers != null) {
-                    for (final RequestHeader header : headers) {
-                        headerList.add(header);
-                    }
-                }
                 headerList.add(new RequestHeader("Authorization", "token " + authToken));
                 headerList.add(new RequestHeader("Accept", "application/vnd.github.v3.raw"));
                 paramMap.put(HcHttpClient.REQUERT_HEADERS_PROPERTY, headerList.toArray(new RequestHeader[headerList.size()]));
