@@ -28,6 +28,7 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import org.codelibs.core.collection.ArrayUtil;
 import org.codelibs.core.lang.StringUtil;
 import org.codelibs.curl.Curl;
 import org.codelibs.curl.CurlResponse;
@@ -513,7 +514,14 @@ public class GitBucketDataStore extends AbstractDataStore {
         }
 
         public void setInitParameterMap(Map<String, Object> params) {
-            this.params.putAll(params);
+            for (final Map.Entry<String, Object> e : params.entrySet()) {
+                final Object param = this.params.get(e.getKey());
+                if (param instanceof String[] && e.getValue() instanceof String[]) {
+                    this.params.put(e.getKey(), ArrayUtil.addAll((String[]) param, (String[]) e.getValue()));
+                } else {
+                    this.params.put(e.getKey(), e.getValue());
+                }
+            }
         }
 
         public void initParameterMap() {
