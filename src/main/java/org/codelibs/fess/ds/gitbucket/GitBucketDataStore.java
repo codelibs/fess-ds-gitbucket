@@ -147,8 +147,8 @@ public class GitBucketDataStore extends AbstractDataStore {
                 }
                 // store issues
                 for (int issueId = 1; issueId <= issueCount + pullCount; issueId++) {
-                    storeIssueById(rootURL, authToken, issueLabel, owner, name, issueId, roleList, crawlingConfig, callback,
-                            paramMap, scriptMap, defaultDataMap);
+                    storeIssueById(rootURL, authToken, issueLabel, owner, name, issueId, roleList, crawlingConfig, callback, paramMap,
+                            scriptMap, defaultDataMap);
 
                     if (readInterval > 0) {
                         sleep(readInterval);
