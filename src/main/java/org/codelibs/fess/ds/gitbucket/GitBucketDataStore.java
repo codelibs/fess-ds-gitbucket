@@ -68,6 +68,7 @@ public class GitBucketDataStore extends AbstractDataStore {
     protected static final String PRIVATE_REPOSITORY_PARAM = "is_private";
     protected static final String COLLABORATORS_PARAM = "collaborators";
 
+    @Override
     protected String getName() {
         return this.getClass().getSimpleName();
     }
@@ -296,8 +297,7 @@ public class GitBucketDataStore extends AbstractDataStore {
         if (logger.isInfoEnabled()) {
             logger.info("Get a content from " + apiUrl);
         }
-        final Map<String, Object> dataMap = new HashMap<>();
-        dataMap.putAll(defaultDataMap);
+        final Map<String, Object> dataMap = new HashMap<>(defaultDataMap);
         dataMap.putAll(ComponentUtil.getDocumentHelper().processRequest(crawlingConfig, paramMap.get("crawlingInfoId"),
                 apiUrl + "?ref=" + refStr + "&large_file=true"));
 
@@ -308,8 +308,6 @@ public class GitBucketDataStore extends AbstractDataStore {
         // TODO scriptMap
 
         callback.store(paramMap, dataMap);
-
-        return;
     }
 
     private void storeIssueById(final String rootURL, final String authToken, final String issueLabel, final String owner,
@@ -351,8 +349,6 @@ public class GitBucketDataStore extends AbstractDataStore {
         // TODO scriptMap
 
         callback.store(paramMap, dataMap);
-
-        return;
     }
 
     private List<String> getIssueComments(final String issueUrl, final String authToken) {
@@ -406,8 +402,7 @@ public class GitBucketDataStore extends AbstractDataStore {
                 logger.info("Get a content from " + pageUrl);
             }
 
-            final Map<String, Object> dataMap = new HashMap<>();
-            dataMap.putAll(defaultDataMap);
+            final Map<String, Object> dataMap = new HashMap<>(defaultDataMap);
             dataMap.putAll(ComponentUtil.getDocumentHelper().processRequest(crawlingConfig, paramMap.get("crawlingInfoId"),
                     pageUrl.replace("+", "%20")));
 
@@ -444,9 +439,9 @@ public class GitBucketDataStore extends AbstractDataStore {
             final InputStream iStream = curlResponse.getContentAsStream();
             final List<Object> fileList = parseList(iStream);
 
-            for (int i = 0; i < fileList.size(); ++i) {
+            for (final Object element : fileList) {
                 @SuppressWarnings("unchecked")
-                final Map<String, String> file = (Map<String, String>) fileList.get(i);
+                final Map<String, String> file = (Map<String, String>) element;
                 final String newPath = path.isEmpty() ? file.get("name") : path + "/" + file.get("name");
                 switch (file.get("type")) {
                 case "file":
@@ -482,38 +477,45 @@ public class GitBucketDataStore extends AbstractDataStore {
 
     // workaround
     static class CrawlerClientFactoryWrapper extends CrawlerClientFactory {
-        private CrawlerClientFactory parent;
-        private Map<String, Object> params = new HashMap<>();
+        private final CrawlerClientFactory parent;
+        private final Map<String, Object> params = new HashMap<>();
 
-        CrawlerClientFactoryWrapper(CrawlerClientFactory parent) {
+        CrawlerClientFactoryWrapper(final CrawlerClientFactory parent) {
             this.parent = parent;
         }
 
+        @Override
         public void init() {
             parent.init();
         }
 
-        public void addClient(String regex, CrawlerClient client) {
+        @Override
+        public void addClient(final String regex, final CrawlerClient client) {
             parent.addClient(regex, client);
         }
 
-        public void addClient(String regex, CrawlerClient client, int pos) {
+        @Override
+        public void addClient(final String regex, final CrawlerClient client, final int pos) {
             parent.addClient(regex, client, pos);
         }
 
+        @Override
         public int hashCode() {
             return parent.hashCode();
         }
 
-        public void addClient(List<String> regexList, CrawlerClient client) {
+        @Override
+        public void addClient(final List<String> regexList, final CrawlerClient client) {
             parent.addClient(regexList, client);
         }
 
-        public CrawlerClient getClient(String url) {
+        @Override
+        public CrawlerClient getClient(final String url) {
             return parent.getClient(url);
         }
 
-        public void setInitParameterMap(Map<String, Object> params) {
+        @Override
+        public void setInitParameterMap(final Map<String, Object> params) {
             for (final Map.Entry<String, Object> e : params.entrySet()) {
                 final Object param = this.params.get(e.getKey());
                 if (param instanceof String[] && e.getValue() instanceof String[]) {
@@ -528,14 +530,17 @@ public class GitBucketDataStore extends AbstractDataStore {
             parent.setInitParameterMap(params);
         }
 
-        public void setClientMap(Map<Pattern, CrawlerClient> clientMap) {
+        @Override
+        public void setClientMap(final Map<Pattern, CrawlerClient> clientMap) {
             parent.setClientMap(clientMap);
         }
 
-        public boolean equals(Object obj) {
+        @Override
+        public boolean equals(final Object obj) {
             return parent.equals(obj);
         }
 
+        @Override
         public String toString() {
             return parent.toString();
         }
