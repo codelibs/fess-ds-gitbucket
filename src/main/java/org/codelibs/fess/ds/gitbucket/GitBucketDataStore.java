@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 CodeLibs Project and the Others.
+ * Copyright 2012-2022 CodeLibs Project and the Others.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -31,12 +32,8 @@ import java.util.stream.Collectors;
 import org.codelibs.core.collection.ArrayUtil;
 import org.codelibs.core.lang.StringUtil;
 import org.codelibs.curl.Curl;
+import org.codelibs.curl.CurlException;
 import org.codelibs.curl.CurlResponse;
-import org.codelibs.fesen.common.xcontent.LoggingDeprecationHandler;
-import org.codelibs.fesen.common.xcontent.NamedXContentRegistry;
-import org.codelibs.fesen.common.xcontent.XContentParser;
-import org.codelibs.fesen.common.xcontent.json.JsonXContent;
-import org.codelibs.fesen.runner.net.EcrCurl;
 import org.codelibs.fess.crawler.client.CrawlerClient;
 import org.codelibs.fess.crawler.client.CrawlerClientFactory;
 import org.codelibs.fess.crawler.client.http.HcHttpClient;
@@ -49,6 +46,10 @@ import org.codelibs.fess.es.config.exentity.DataConfig;
 import org.codelibs.fess.helper.SystemHelper;
 import org.codelibs.fess.mylasta.direction.FessConfig;
 import org.codelibs.fess.util.ComponentUtil;
+import org.opensearch.common.xcontent.LoggingDeprecationHandler;
+import org.opensearch.common.xcontent.NamedXContentRegistry;
+import org.opensearch.common.xcontent.XContentParser;
+import org.opensearch.common.xcontent.json.JsonXContent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,6 +68,14 @@ public class GitBucketDataStore extends AbstractDataStore {
     protected static final String GITBUCKET_URL_PARAM = "url";
     protected static final String PRIVATE_REPOSITORY_PARAM = "is_private";
     protected static final String COLLABORATORS_PARAM = "collaborators";
+
+    protected static final Function<CurlResponse, Map<String, Object>> jsonParser = response -> {
+        try (InputStream is = response.getContentAsStream()) {
+            return JsonXContent.jsonXContent.createParser(NamedXContentRegistry.EMPTY, LoggingDeprecationHandler.INSTANCE, is).map();
+        } catch (final Exception e) {
+            throw new CurlException("Failed to access the content.", e);
+        }
+    };
 
     @Override
     protected String getName() {
@@ -194,7 +203,7 @@ public class GitBucketDataStore extends AbstractDataStore {
         try (CurlResponse curlResponse =
                 Curl.get(url).proxy(fessConfig.getHttpProxy()).header("Authorization", "token " + authToken).execute()) {
             @SuppressWarnings({ "rawtypes", "unchecked" })
-            final Map<String, String> map = (Map) curlResponse.getContent(EcrCurl.jsonParser());
+            final Map<String, String> map = (Map) curlResponse.getContent(jsonParser);
             assert (map.containsKey("version"));
             assert (map.containsKey("source_label") && map.containsKey("wiki_label") && map.containsKey("issue_label"));
             return map;
@@ -216,7 +225,7 @@ public class GitBucketDataStore extends AbstractDataStore {
 
             try (CurlResponse curlResponse =
                     Curl.get(urlWithOffset).proxy(fessConfig.getHttpProxy()).header("Authorization", "token " + authToken).execute()) {
-                final Map<String, Object> map = curlResponse.getContent(EcrCurl.jsonParser());
+                final Map<String, Object> map = curlResponse.getContent(jsonParser);
 
                 assert (map.containsKey("total_count"));
                 assert (map.containsKey("response_count"));
@@ -249,7 +258,7 @@ public class GitBucketDataStore extends AbstractDataStore {
 
         try (CurlResponse curlResponse =
                 Curl.get(url).proxy(fessConfig.getHttpProxy()).header("Authorization", "token " + authToken).execute()) {
-            final Map<String, Object> map = curlResponse.getContent(EcrCurl.jsonParser());
+            final Map<String, Object> map = curlResponse.getContent(jsonParser);
             assert (map.containsKey("object"));
             @SuppressWarnings("unchecked")
             final Map<String, String> objmap = (Map<String, String>) map.get("object");
@@ -331,7 +340,7 @@ public class GitBucketDataStore extends AbstractDataStore {
         // FIXME: Use `ComponentUtil.getDocumentHelper().processRequest` instead of `Curl.get`
         try (CurlResponse curlResponse =
                 Curl.get(issueUrl).proxy(fessConfig.getHttpProxy()).header("Authorization", "token " + authToken).execute()) {
-            final Map<String, Object> map = curlResponse.getContent(EcrCurl.jsonParser());
+            final Map<String, Object> map = curlResponse.getContent(jsonParser);
             dataMap.put("title", map.getOrDefault("title", ""));
             contentStr = (String) map.getOrDefault("body", "");
         } catch (final Exception e) {
@@ -388,7 +397,7 @@ public class GitBucketDataStore extends AbstractDataStore {
         // Get list of pages
         try (CurlResponse curlResponse =
                 Curl.get(wikiUrl).proxy(fessConfig.getHttpProxy()).header("Authorization", "token " + authToken).execute()) {
-            final Map<String, Object> map = curlResponse.getContent(EcrCurl.jsonParser());
+            final Map<String, Object> map = curlResponse.getContent(jsonParser);
             pageList = (List<String>) map.get("pages");
         } catch (final Exception e) {
             logger.warn("Failed to access to " + wikiUrl, e);
