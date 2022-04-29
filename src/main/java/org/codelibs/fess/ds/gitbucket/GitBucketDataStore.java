@@ -34,6 +34,7 @@ import org.codelibs.core.lang.StringUtil;
 import org.codelibs.curl.Curl;
 import org.codelibs.curl.CurlException;
 import org.codelibs.curl.CurlResponse;
+import org.codelibs.fess.Constants;
 import org.codelibs.fess.app.service.FailureUrlService;
 import org.codelibs.fess.crawler.client.CrawlerClient;
 import org.codelibs.fess.crawler.client.CrawlerClientFactory;
@@ -306,6 +307,7 @@ public class GitBucketDataStore extends AbstractDataStore {
         final String apiUrl = encode(rootURL, "api/v3/repos/" + owner + "/" + name + "/contents/" + path, null);
         final String viewUrl = encode(rootURL, owner + "/" + name + "/blob/" + refStr + "/" + path, null);
         final StatsKeyObject statsKey = new StatsKeyObject(viewUrl);
+        paramMap.put(Constants.CRAWLER_STATS_KEY, statsKey);
         final Map<String, Object> dataMap = new HashMap<>(defaultDataMap);
         try {
             crawlerStatsHelper.begin(statsKey);
@@ -349,6 +351,7 @@ public class GitBucketDataStore extends AbstractDataStore {
         final String issueUrl = rootURL + "api/v3/repos/" + owner + "/" + name + "/issues/" + issueId.toString();
         final String viewUrl = rootURL + owner + "/" + name + "/issues/" + issueId.toString();
         final StatsKeyObject statsKey = new StatsKeyObject(viewUrl);
+        paramMap.put(Constants.CRAWLER_STATS_KEY, statsKey);
         final Map<String, Object> dataMap = new HashMap<>(defaultDataMap);
         try {
             crawlerStatsHelper.begin(statsKey);
@@ -445,6 +448,7 @@ public class GitBucketDataStore extends AbstractDataStore {
             final String pageUrl = wikiUrl + "/contents/" + page + ".md";
             final String viewUrl = rootURL + owner + "/" + name + "/wiki/" + page;
             final StatsKeyObject statsKey = new StatsKeyObject(viewUrl);
+            paramMap.put(Constants.CRAWLER_STATS_KEY, statsKey);
             final Map<String, Object> dataMap = new HashMap<>(defaultDataMap);
             try {
                 crawlerStatsHelper.begin(statsKey);
