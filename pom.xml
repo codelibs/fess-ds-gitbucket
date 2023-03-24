@@ -4,7 +4,7 @@
 	<artifactId>fess-ds-gitbucket</artifactId>
 	<packaging>jar</packaging>
 	<name>GitBucket Data Store</name>
-	<version>14.7.0</version>
+	<version>14.7.1-SNAPSHOT</version>
 	<scm>
 		<connection>scm:git:git@github.com:codelibs/fess-ds-gitbucket.git</connection>
 		<developerConnection>scm:git:git@github.com:codelibs/fess-ds-gitbucket.git</developerConnection>
